@@ -133,13 +133,13 @@ def load_ts(video_ts_dir, ls, key):
                     with open(ts_file_name, 'wb') as f:
                         f.write(aes_decode(r.content, key))
                         f.close()
-                        print(ts_file_name + " --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(i, length, i * 100 / length, int(datetime.datetime.now().timestamp()) - int(req_start)))
+                        print(ts_file_name + " --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(i, length, i * 100 / length, int(round(datetime.datetime.now().timestamp() * 1000)) - int(req_start)))
                         request_fail = False
                 except Exception as e:
                     print(e)
                     request_fail_times = request_fail_times + 1
                     print(ts_file_name + " --> ERROR ( {} times )".format(request_fail_times))
-        print("全部ts下载完毕, 耗时" + str(int(datetime.datetime.now().timestamp()) - int(start)) + " ms : " + ts_file_name)
+        print("全部ts下载完毕, 耗时" + str(int(round(datetime.datetime.now().timestamp() * 1000)) - int(start)) + " ms : " + ts_file_name)
     except Exception as e:
         print("批量下载失败: " + path)
         raise e
