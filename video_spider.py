@@ -129,7 +129,7 @@ def load_ts(video_ts_dir, ls, key):
             while request_fail:
                 try:
                     req_start = datetime.datetime.now().timestamp()
-                    r = requests.get(ls[i])
+                    r = requests.get(ls[i], headers=headers, timeout=30)
                     with open(ts_file_name, 'wb') as f:
                         f.write(aes_decode(r.content, key))
                         f.close()
