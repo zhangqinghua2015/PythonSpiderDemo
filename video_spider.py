@@ -128,11 +128,12 @@ def load_ts(video_ts_dir, ls, key):
             request_fail_times = 0
             while request_fail:
                 try:
+                    req_start = datetime.datetime.now().timestamp()
                     r = requests.get(ls[i])
                     with open(ts_file_name, 'wb') as f:
                         f.write(aes_decode(r.content, key))
                         f.close()
-                        print(ts_file_name + " --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(i, length, i * 100 / length, int(datetime.datetime.now().timestamp()) - int(start)))
+                        print(ts_file_name + " --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(i, length, i * 100 / length, int(datetime.datetime.now().timestamp()) - int(req_start)))
                         request_fail = False
                 except Exception as e:
                     print(e)
