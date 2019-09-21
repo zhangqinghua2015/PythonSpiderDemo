@@ -25,7 +25,9 @@ def aes_decode(data, key):
     :param data:  要解密的数据
     :return:  处理好的数据
     """
-    cryptor = AES.new(key, AES.MODE_CBC, key)
+    iv = data[0:16]
+    data = data[16:]
+    cryptor = AES.new(key, AES.MODE_CBC, iv)
     plain_text = cryptor.decrypt(data)
     return plain_text.rstrip(b'\0')  # .decode("utf-8")
 
@@ -122,12 +124,22 @@ def load_ts(video_ts_dir, ls, key):
         start = datetime.datetime.now().timestamp()
         for i in range(length):
             ts_file_name = root + '/' + str(i).zfill(8) + ".ts"
-            r = requests.get(ls[i])
-            with open(ts_file_name, 'wb') as f:
-                f.write(aes_decode(r.content, key))
-                f.close()
-                print(ts_file_name + " --> OK ( {} / {} ){:.2f}%".format(i, length, i * 100 / length))
-        # print("全部ts下载完毕, 耗时" + (datetime.datetime.now().timestamp() - start) + "ms : " + ts_file_name)
+            request_fail = True
+            request_fail_times = 0
+            while request_fail:
+                try:
+                    r = requests.get(ls[i])
+                    print(ts_file_name + " --> 下载完毕, 耗时" + str(int(datetime.datetime.now().timestamp()) - int(start)) + " ms : " + ts_file_name)
+                    with open(ts_file_name, 'wb') as f:
+                        f.write(aes_decode(r.content, key))
+                        f.close()
+                        print(ts_file_name + " --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(i, length, i * 100 / length, int(datetime.datetime.now().timestamp()) - int(start)))
+                        request_fail = False
+                except Exception as e:
+                    print(e)
+                    request_fail_times = request_fail_times + 1
+                    print(ts_file_name + " --> ERROR ( {} times )".format(request_fail_times))
+        print("全部ts下载完毕, 耗时" + str(int(datetime.datetime.now().timestamp()) - int(start)) + " ms : " + ts_file_name)
     except Exception as e:
         print("批量下载失败: " + path)
         raise e
