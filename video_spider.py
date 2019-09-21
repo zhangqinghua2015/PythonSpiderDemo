@@ -121,14 +121,14 @@ def load_ts(video_ts_dir, ls, key):
     try:
         if not os.path.exists(root):
             os.mkdir(root)
-        start = datetime.datetime.now().timestamp()
+        start = round(datetime.datetime.now().timestamp() * 1000)
         for i in range(length):
             ts_file_name = root + '/' + str(i).zfill(8) + ".ts"
             request_fail = True
             request_fail_times = 0
             while request_fail:
                 try:
-                    req_start = datetime.datetime.now().timestamp()
+                    req_start = round(datetime.datetime.now().timestamp() * 1000)
                     r = requests.get(ls[i], headers=headers, timeout=30)
                     with open(ts_file_name, 'wb') as f:
                         f.write(aes_decode(r.content, key))
