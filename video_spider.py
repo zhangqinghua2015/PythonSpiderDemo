@@ -224,9 +224,9 @@ def ts_to_mp4_by_filelist(video_dir, video_title):
 #                 f.write(chunk)
 
 # 后台执行可使用下面方式接收参数
-# nohup python - u video_download.py https://xxxxx /root/video >> services.log 2>&1 &
-# url = sys.args[1]
-# path = sys.args[2]
+# nohup python -u video_download.py https://xxxxx /root/video >> services.log 2>&1 &
+# url = sys.argv[1]
+# path = sys.argv[2]
 if __name__ == '__main__':
     url = input('请输入地址：')
     path = input('请输入保存路径：')
