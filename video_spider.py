@@ -224,7 +224,7 @@ def ts_to_mp4_by_filelist(video_dir, video_title):
 #                 f.write(chunk)
 
 # 后台执行可使用下面方式接收参数
-# nohup python - u video_download.py https://xxxxx /root/video >> services.log 2 > & 1
+# nohup python - u video_download.py https://xxxxx /root/video >> services.log 2>&1 &
 # url = sys.args[1]
 # path = sys.args[2]
 if __name__ == '__main__':
@@ -261,5 +261,5 @@ if __name__ == '__main__':
     # 下载ts文件
     load_ts(video_dir + "/ts", ts_list, key)
     # 合并ts为mp4
-    ts_to_mp4(video_dir, video_title)
+    # ts_to_mp4(video_dir, video_title)
     ts_to_mp4_by_filelist(video_dir, video_title)
