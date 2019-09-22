@@ -11,6 +11,16 @@ from Crypto.Cipher import AES
 
 headers = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, '
                          'like Gecko) Version/8.0 Mobile/12B410 Safari/600.1.4'}
+file_list_shell_name = 'filelist.sh'
+file_list_shell = '#!/bin/bash\n' \
+                  'dir=$1\n' \
+                  'cd "$dir"\n' \
+                  'for i in `ls`\n' \
+                  'do\n' \
+                  '    if [ -f "$i" ]; then\n' \
+                  '        echo "file \'$i\'" >> file.txt\n' \
+                  '    fi\n' \
+                  'done'
 
 
 # 字符（十六进制）转ASCII码
@@ -133,13 +143,13 @@ def load_ts(video_ts_dir, ls, key):
                     with open(ts_file_name, 'wb') as f:
                         f.write(aes_decode(r.content, key))
                         f.close()
-                        print(ts_file_name + " --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(i, length, i * 100 / length, int(round(datetime.datetime.now().timestamp() * 1000)) - int(req_start)))
+                        print("{} --> OK ( {} / {} ){:.2f}%, 耗时 {} ms".format(ts_file_name, i, length, i * 100 / length, int(round(datetime.datetime.now().timestamp() * 1000)) - int(req_start)))
                         request_fail = False
                 except Exception as e:
                     print(e)
                     request_fail_times = request_fail_times + 1
                     print(ts_file_name + " --> ERROR ( {} times )".format(request_fail_times))
-        print("全部ts下载完毕, 耗时" + str(int(round(datetime.datetime.now().timestamp() * 1000)) - int(start)) + " ms : " + ts_file_name)
+        print("{} 全部ts下载完毕, 耗时 {} ms".format(root, str(int(round(datetime.datetime.now().timestamp() * 1000)) - int(start))))
     except Exception as e:
         print("批量下载失败: " + path)
         raise e
@@ -170,6 +180,35 @@ def ts_to_mp4(video_dir, video_title):
     save_mp4_file = mp4_dir + '/' + video_title + '.mp4'
     # 调取系统命令使用ffmpeg将ts合成mp4文件
     cmd = 'ffmpeg -i "concat:%s" -acodec copy -vcodec copy -absf aac_adtstoasc %s' % (ts_files, save_mp4_file)
+    os.system(cmd)
+    print("结束合并... : " + video_dir)
+
+
+# 使用文件指定ts文件集合
+def ts_to_mp4_by_filelist(video_dir, video_title):
+    print("开始合并... : " + video_dir)
+    root = video_dir
+    mp4_dir = video_dir + '/mp4'
+    ts_dir = video_dir + '/ts'
+    file_txt = ts_dir + '/file.txt'
+
+    os.chdir(root)
+    if not os.path.exists(mp4_dir):
+        os.mkdir(mp4_dir)
+
+    # 生成脚本
+    with open(video_dir + '/' + file_list_shell_name, 'wb') as f:
+        f.write(file_list_shell.rstrip(b'\0'))
+        f.close()
+
+    # 执行脚本将ts文件名集合写入txt
+    os.system('cd "%s" && sh filelist.sh \'%s\'' % (video_dir, ts_dir))
+
+    # 指定输出文件名称
+    save_mp4_file = mp4_dir + '/' + video_title + '.mp4'
+    # 调取系统命令使用ffmpeg将ts合成mp4文件
+    cmd = 'ffmpeg -f concat -i \'%s\' -c copy \'%s\'' % (file_txt, save_mp4_file)
+    #print("cmd: " + cmd)
     os.system(cmd)
     print("结束合并... : " + video_dir)
 
@@ -223,3 +262,4 @@ if __name__ == '__main__':
     load_ts(video_dir + "/ts", ts_list, key)
     # 合并ts为mp4
     ts_to_mp4(video_dir, video_title)
+    ts_to_mp4_by_filelist(video_dir, video_title)
