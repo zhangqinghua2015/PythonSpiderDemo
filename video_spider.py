@@ -74,10 +74,15 @@ def get_m3u8_url2(m3u8_url_1):
 def get_m3u8_file(m3u8_url, filename):
     try:
         r = requests.get(m3u8_url, headers=headers)
+        if r.text.__contains__('m3u8'):
+            m3u8_url = get_m3u8_url2(m3u8_url)
+            r = requests.get(m3u8_url, headers=headers)
+
         f = open(filename, "w", encoding="utf-8")  # 这里要改成utf-8编码，不然默认gbk
         f.write(r.text)
         f.close()
         print("创建ts列表文件成功: " + filename)
+#        return m3u8_url
     except Exception as e:
         print("爬取失败: " + filename)
         raise e
@@ -197,8 +202,8 @@ def ts_to_mp4_by_filelist(video_dir, video_title):
         os.mkdir(mp4_dir)
 
     # 生成脚本
-    with open(video_dir + '/' + file_list_shell_name, 'wb') as f:
-        f.write(file_list_shell.rstrip(b'\0'))
+    with open(video_dir + '/' + file_list_shell_name, 'w', encoding='utf-8') as f:
+        f.write(str(file_list_shell))
         f.close()
 
     # 执行脚本将ts文件名集合写入txt

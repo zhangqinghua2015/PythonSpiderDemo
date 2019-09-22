@@ -25,8 +25,8 @@ def ts_to_mp4(video_dir, video_title):
         os.mkdir(mp4_dir)
 
     # 生成脚本
-    with open(video_dir + '/' + file_list_shell_name, 'wb') as f:
-        f.write(file_list_shell.rstrip(b'\0'))
+    with open(video_dir + '/' + file_list_shell_name, 'w', encoding='utf-8') as f:
+        f.write(str(file_list_shell))
         f.close()
 
     # 执行脚本将ts文件名集合写入txt
@@ -36,7 +36,7 @@ def ts_to_mp4(video_dir, video_title):
     save_mp4_file = mp4_dir + '/' + video_title + '.mp4'
     # 调取系统命令使用ffmpeg将ts合成mp4文件
     cmd = 'ffmpeg -f concat -i \'%s\' -c copy \'%s\'' % (file_txt, save_mp4_file)
-    #print("cmd: " + cmd)
+    print("cmd: " + cmd)
     os.system(cmd)
     print("结束合并... : " + video_dir)
 
