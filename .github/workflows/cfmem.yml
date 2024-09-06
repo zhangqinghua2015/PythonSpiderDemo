@@ -3,9 +3,9 @@ name: cfmem
 # on:
 #   workflow_dispatch:
 on:
-  schedule:
-  - cron: '6 8 * * *'
   workflow_dispatch:
+  schedule:
+    - cron: '0/2 * * * *'
  
 jobs:
   cfmem:
