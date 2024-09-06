@@ -14,7 +14,7 @@ response = requests.get(links[0].get('href'))
 soup = BeautifulSoup(response.text, 'html.parser')
 links = soup.find_all('span',{'face':'Raleway, Arial, sans-serif'})
 
-v_type_names = ['vray', 'clash', 'mihomo', 'singbox']
+v_type_names = ['ray', 'clash', 'mihomo', 'singbox']
 for link in links:
     text = link.text
     arr = text.split('->')
