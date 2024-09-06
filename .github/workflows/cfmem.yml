@@ -23,11 +23,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
         pip install BeautifulSoup4
-    - name: save results
+    - name: get results
       run: |
         python cfmem.py
-        git config --global user.email "${{ secrets.GT_EMAIL }}"
-        git config --global user.name "${{ secrets.GT_ACTOR }}"
-        git add .
-        git commit -m "update"
-        git push
+        # git config --global user.email "${{ secrets.GT_EMAIL }}"
+        # git config --global user.name "${{ secrets.GT_ACTOR }}"
+        # git add .
+        # git commit -m "update"
+        # git push
+    - name: save results
+      uses: ad-m/github-push-action@master
+      with:
+        # github_token: ${{ secrets.GH_TOKEN }}
+        # repository: ${{ secrets.GH_PATH }}
+        directory: .
+        branch: config
+        force: true
