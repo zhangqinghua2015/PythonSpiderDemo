@@ -14,11 +14,13 @@ response = requests.get(links[0].get('href'))
 soup = BeautifulSoup(response.text, 'html.parser')
 links = soup.find_all('span',{'face':'Raleway, Arial, sans-serif'})
 
-v_type_names = ['ray', 'clash', 'mihomo', 'singbox']
+v_type_names = ['V2Ray/XRay', 'clash', 'mihomo', 'singbox']
 for link in links:
     text = link.text
     arr = text.split('->')
     print(arr)
+    if not arr[1].startswith('http'):
+        continue
     response = requests.get(arr[1].strip())
     file_type = arr[1][arr[1].rindex('.'):len(arr[1])]
 
