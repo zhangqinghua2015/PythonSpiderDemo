@@ -19,6 +19,8 @@ for link in links:
     text = link.text
     arr = text.split('->')
     print(arr)
+    if not arr[1].startswith('http'):
+        continue
     response = requests.get(arr[1].strip())
     file_type = arr[1][arr[1].rindex('.'):len(arr[1])]
 
