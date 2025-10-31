@@ -1,9 +1,13 @@
 # pip3 install selenium
+# pip3 install seleniumwire
+# pip3 install blinker==1.7.0
 # pip3 install pyperclip
 # pip3 install setuptools
 # pip3 install webdriver-manager
+from urllib.parse import parse_qs
 from datetime import datetime
-from selenium import webdriver
+# from selenium import webdriver
+from seleniumwire import webdriver  # 注意：从seleniumwire导入驱动
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -17,6 +21,8 @@ import time
 import tempfile
 import os
 import subprocess
+import json
+
 
 
 # 1. 初始化驱动并加载网页
@@ -210,6 +216,84 @@ def find_parent_by_child_text(driver, child_text, parent_tag=None, exact_match=T
         print(f"❌ 定位失败：{str(e)}")
         return None
 
+
+def get_div_displayed_text(driver, iframe_selector, target_div_selector):
+    """
+    获取 iframe 中目标 div 内所有元素的展示文本（可见文本合并结果）
+    :param driver: Selenium 驱动实例
+    :param iframe_selector: iframe 的选择器（CSS 或 XPath）
+    :param target_div_selector: 目标 div 的选择器（CSS 或 XPath，在 iframe 内）
+    :return: 页面展示的合并文本（str）/ None
+    """
+    try:
+        # 1. 切换到 iframe 上下文（必须步骤，否则无法定位 iframe 内元素）
+        WebDriverWait(driver, 10).until(
+            EC.frame_to_be_available_and_switch_to_it((By.XPATH, iframe_selector))
+        )
+        print("✅ 已切换到目标 iframe")
+
+        # 2. 等待目标 div 加载完成（确保元素可见，避免动态内容未加载）
+        target_div = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, target_div_selector))
+        )
+        print("✅ 已定位到目标 div")
+
+        # 3. 获取 div 内所有元素的展示文本（.text 属性会自动合并所有子元素的可见文本）
+        displayed_text = target_div.text.strip()
+
+        # 4. 切回顶层页面（避免影响后续操作）
+        driver.switch_to.default_content()
+
+        print(f"✅ 获取到 div 内所有元素的展示文本：{displayed_text}")
+        return displayed_text
+
+    except Exception as e:
+        print(f"❌ 获取文本失败：{str(e)}")
+        driver.switch_to.default_content()  # 出错时确保切回顶层
+        return None
+
+
+def capture_post_with_selenium_wire(driver, button_selector, target_keyword, timeout=30):
+
+    try:
+        # 2. 等待按钮可点击并点击
+        button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, button_selector))
+        )
+        button.click()
+        print(f"✅ 已点击按钮：{button_selector}")
+
+        # 3. 等待请求完成并筛选POST请求
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            # 遍历所有请求
+            for request in driver.requests:
+                if request.method == "POST" and target_keyword in request.url:
+                    # 解析请求体
+                    body = request.body.decode("utf-8") if request.body else ""
+                    parsed_body = {}
+                    if body:
+                        try:
+                            parsed_body = json.loads(body)
+                        except:
+                            parsed_body = parse_qs(body)
+                            parsed_body = {k: v[0] for k, v in parsed_body.items()}
+
+                    return {
+                        "url": request.url,
+                        "method": request.method,
+                        "headers": dict(request.headers),
+                        "body": parsed_body
+                    }
+            time.sleep(0.5)
+
+        print(f"❌ 超时未捕获到POST请求（{timeout}秒）")
+        return None
+
+    except Exception as e:
+        print(f"❌ 操作失败：{str(e)}")
+        return None
+
 # 关闭广告
 def close_ad_popup(driver, wait_time=5):
     ad_close_selectors = [
@@ -242,7 +326,7 @@ def full_copy_workflow(url, wait_after_click=1):
     if not driver:
         return None
 
-    time.sleep(2)
+    time.sleep(5)
 
     no_passwd_button = find_parent_by_child_text(driver, "免密码进入", "button")
     no_passwd_button_selector = "//*[@id=\"__nuxt\"]/div/main/div[1]/div/div[1]/div/div[2]/div/div[3]/button[1]"
@@ -307,17 +391,25 @@ def full_copy_workflow(url, wait_after_click=1):
         return None
 
     # 8、等待10秒
-    time.sleep(12)
+    time.sleep(4)
+
+    # iframe_selector = "//*[starts-with(@id, 'reka-dialog-content-v')]/div[2]/div/div/div[1]/iframe"
+    # text_div_selector = "div > div.monaco-editor.no-user-select.mac.showUnused.showDeprecated.vs > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs.mac"
+    # text_div_selector = "//*[@id=\"__nuxt\"]"
+    # get_div_displayed_text(driver, iframe_selector, text_div_selector)
+
+    params = capture_post_with_selenium_wire(driver, button_selector= "//button[text()='订阅']", target_keyword="/text/upload")
+    clipboard_content = params['body'].get('text')
 
     # 9、点击复制按钮
-    copy_button_selector = "//button[text()='复制']"
-    click_success = execute_click(driver, copy_button_selector, selector_type=By.XPATH)
-    if not click_success:
-        driver.quit()
-        return None
+    # copy_button_selector = "//button[text()='复制']"
+    # click_success = execute_click(driver, copy_button_selector, selector_type=By.XPATH)
+    # if not click_success:
+    #     driver.quit()
+    #     return None
 
     # 10、获取剪贴板内容
-    clipboard_content = get_clipboard_content(wait_after_click=wait_after_click)
+    # clipboard_content = get_clipboard_content(wait_after_click=wait_after_click)
 
     # 关闭浏览器
     driver.quit()
