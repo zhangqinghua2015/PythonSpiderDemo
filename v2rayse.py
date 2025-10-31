@@ -1,5 +1,5 @@
 # pip3 install selenium
-# pip3 install seleniumwire
+# pip3 install selenium-wire
 # pip3 install blinker==1.7.0
 # pip3 install pyperclip
 # pip3 install setuptools
