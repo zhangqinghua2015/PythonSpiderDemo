@@ -20,7 +20,9 @@ import time
 def init_driver_and_load_page(url, wait_time=10):
     driver = None
     try:
-        driver = webdriver.Chrome()
+        options = webdriver.ChromeOptions()
+        options.add_argument("--user-data-dir=/path/to/your/user-data")  # 导致冲突的参数
+        driver = webdriver.Chrome(options=options)
         # options = uc.ChromeOptions()
         # options.add_argument("--no-sandbox")
         # options.add_argument("--disable-dev-shm-usage")
