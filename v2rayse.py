@@ -15,6 +15,8 @@ from selenium.common.exceptions import (
 import pyperclip  # 用于访问系统剪贴板
 import time
 import tempfile
+import os
+import subprocess
 
 
 # 1. 初始化驱动并加载网页
@@ -52,7 +54,7 @@ def init_driver_and_load_page(url, wait_time=10):
 
 
 # 2. 执行点击操作（可用于点击复制按钮）
-def execute_click(driver, click_selector, target_element=None, selector_type=By.CSS_SELECTOR, wait_time=5):
+def execute_click(driver, click_selector, target_element=None, selector_type=By.CSS_SELECTOR, wait_time=10):
     if not driver:
         print(f"❌ 驱动实例为空，无法执行点击")
         return False
@@ -80,30 +82,63 @@ def execute_click(driver, click_selector, target_element=None, selector_type=By.
 
 
 # 3. 从剪贴板获取内容（点击复制按钮后调用）
-def get_clipboard_content(wait_after_click=1):
+def get_clipboard_content(wait_after_click=2, max_retries=3):
     """
-    从系统剪贴板获取内容
+    从系统剪贴板获取内容（优化版：兼容本地和CI环境，支持重试）
     :param wait_after_click: 点击后等待复制完成的时间（秒）
+    :param max_retries: 读取失败时的重试次数
     :return: 剪贴板内容（str）/ None（失败）
     """
     try:
-        # 等待复制操作完成（根据页面响应速度调整）
+        # 等待复制操作完成（CI环境建议延长至2-3秒）
         time.sleep(wait_after_click)
 
-        # 读取剪贴板
-        content = pyperclip.paste()
-        if content:
-            print("✅ 成功读取剪贴板内容")
-            return content
-        else:
-            print("❌ 剪贴板内容为空，可能复制未完成")
-            return None
+        # 检测是否为CI环境（GitHub Actions会设置此环境变量）
+        is_ci = os.getenv("CI", "false").lower() == "true"
+
+        # 重试机制：多次读取避免偶发失败
+        for retry in range(max_retries):
+            try:
+                if is_ci:
+                    # CI环境：优先用xclip命令直接读取系统剪贴板（比pyperclip更可靠）
+                    result = subprocess.run(
+                        ["xclip", "-selection", "clipboard", "-o"],  # 读取系统剪贴板
+                        capture_output=True,
+                        text=True,
+                        timeout=2
+                    )
+                    if result.returncode == 0:
+                        content = result.stdout.strip()
+                        if content:
+                            print(f"✅ CI环境：第{retry+1}次读取剪贴板成功")
+                            return content
+                else:
+                    # 本地环境：用pyperclip读取
+                    content = pyperclip.paste().strip()
+                    if content:
+                        print(f"✅ 本地环境：第{retry+1}次读取剪贴板成功")
+                        return content
+
+                # 若内容为空，等待后重试
+                if retry < max_retries - 1:
+                    time.sleep(1)  # 重试间隔1秒
+                    print(f"🔄 第{retry+1}次读取为空，准备重试...")
+
+            except Exception as e:
+                print(f"⚠️ 第{retry+1}次读取失败：{str(e)}")
+                if retry < max_retries - 1:
+                    time.sleep(1)
+
+        # 所有重试都失败
+        print("❌ 所有重试均失败，剪贴板内容为空或无法读取")
+        return None
+
     except Exception as e:
-        print(f"❌ 读取剪贴板失败：{str(e)}")
+        print(f"❌ 剪贴板操作整体失败：{str(e)}")
         return None
 
 # 鼠标悬停
-def simulate_mouse_hover(driver, target_selector, selector_type=By.CSS_SELECTOR, wait_time=5):
+def simulate_mouse_hover(driver, target_selector, selector_type=By.CSS_SELECTOR, wait_time=10):
     """
     模拟鼠标悬停在目标元素上
     :param driver: Selenium浏览器驱动实例
@@ -135,7 +170,7 @@ def simulate_mouse_hover(driver, target_selector, selector_type=By.CSS_SELECTOR,
         return None
 
 
-def find_parent_by_child_text(driver, child_text, parent_tag=None, exact_match=True, wait_time=5):
+def find_parent_by_child_text(driver, child_text, parent_tag=None, exact_match=True, wait_time=10):
     """
     通过子元素的文本定位其父元素
     :param driver: Selenium浏览器驱动
@@ -207,9 +242,11 @@ def full_copy_workflow(url, wait_after_click=1):
         return None
 
     time.sleep(2)
+
+    no_passwd_button = find_parent_by_child_text(driver, "免密码进入", "button")
     no_passwd_button_selector = "//*[@id=\"__nuxt\"]/div/main/div[1]/div/div[1]/div/div[2]/div/div[3]/button[1]"
     # 1、点击免进
-    click_no_passwd = execute_click(driver, no_passwd_button_selector, selector_type=By.XPATH)
+    click_no_passwd = execute_click(driver, no_passwd_button_selector, no_passwd_button, selector_type=By.XPATH)
     if not click_no_passwd:
         driver.quit()
         return None
@@ -225,13 +262,14 @@ def full_copy_workflow(url, wait_after_click=1):
     #     return None
 
     # 3、点击查看
+    watch_button = find_parent_by_child_text(driver, "查看节点", "button")
     watch_button_selector = "//*[@id=\"reka-dialog-content-v-0-0-0-0-0\"]/div[2]/div/button"
-    click_watch = execute_click(driver, watch_button_selector, selector_type=By.XPATH)
+    click_watch = execute_click(driver, watch_button_selector, watch_button, selector_type=By.XPATH)
     if not click_watch:
         driver.quit()
         return None
 
-    time.sleep(2)
+    time.sleep(4)
     # 4、点击全选
     select_all_button_selector = "#v-0-0-0-0-4"
     click_select_all = execute_click(driver, select_all_button_selector)
@@ -239,6 +277,7 @@ def full_copy_workflow(url, wait_after_click=1):
         driver.quit()
         return None
 
+    time.sleep(1)
     # 5、点击操作
     operate_button_selector = "#reka-dropdown-menu-trigger-v-0-0-0-0-3"
     click_operate = execute_click(driver, operate_button_selector)
@@ -277,7 +316,7 @@ def full_copy_workflow(url, wait_after_click=1):
         return None
 
     # 10、获取剪贴板内容
-    clipboard_content = get_clipboard_content(wait_after_click)
+    clipboard_content = get_clipboard_content(wait_after_click=wait_after_click)
 
     # 关闭浏览器
     driver.quit()
@@ -300,7 +339,14 @@ if __name__ == "__main__":
         result = (result.replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
                   .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:', '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
         print(f"📋 修改后的内容：\n{result}")
-        with open(datetime.now().strftime('%Y%m%d%H')+"/mihomo.yaml", 'w') as f:
+        file_path = datetime.now().strftime('%Y%m%d%H')+"/mihomo.yaml"
+        # 1. 提取文件所在的目录路径
+        dir_path = os.path.dirname(file_path)
+        # 2. 若目录不存在，则递归创建（包括所有父目录）
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path, exist_ok=True)  # exist_ok=True 避免目录已存在时的错误
+            print(f"✅ 文件夹不存在，已自动创建：{dir_path}")
+        with open(file_path, 'w') as f:
             f.write(result)
     else:
         print("❌ 复制失败")
