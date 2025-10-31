@@ -18,21 +18,21 @@ jobs:
       with:
         python-version: 3.9
 
-    # 安装Chrome的开源版本（Chromium）
-    - name: Install Chrome
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser xclip xvfb
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install selenium
-        pip install seleniumwire
+        pip install seleniumwire -i https://pypi.org/simple/
         pip install pyperclip
         pip install setuptools
         pip install webdriver-manager
         pip install blinker==1.7.0
 
+    # 安装Chrome的开源版本（Chromium）
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser xclip xvfb
     # 启动X虚拟服务器（指定显示端口:99）
     # 导出显示变量，让Chrome和xclip使用虚拟显示器
     - name: get results
