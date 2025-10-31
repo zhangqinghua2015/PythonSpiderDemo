@@ -14,14 +14,26 @@ from selenium.common.exceptions import (
 # import undetected_chromedriver as uc
 import pyperclip  # 用于访问系统剪贴板
 import time
+import tempfile
 
 
 # 1. 初始化驱动并加载网页
 def init_driver_and_load_page(url, wait_time=10):
     driver = None
     try:
+        temp_dir = tempfile.mkdtemp(prefix="chrome-", dir="/tmp")
+        print(f"使用临时用户目录：{temp_dir}")
         options = webdriver.ChromeOptions()
-        options.add_argument("--user-data-dir=/path/to/your/user-data")  # 导致冲突的参数
+        # 核心：指定可写的用户数据目录
+        options.add_argument(f"--user-data-dir={temp_dir}")
+        # 解决Ubuntu权限问题
+        options.add_argument("--no-sandbox")
+        # 禁用共享内存（CI环境可能限制）
+        options.add_argument("--disable-dev-shm-usage")
+        # 无头模式（CI环境无GUI）
+        options.add_argument("--headless=new")
+        # 禁用GPU加速
+        options.add_argument("--disable-gpu")
         driver = webdriver.Chrome(options=options)
         # options = uc.ChromeOptions()
         # options.add_argument("--no-sandbox")
