@@ -24,7 +24,6 @@ import subprocess
 import json
 
 
-
 # 1. 初始化驱动并加载网页
 def init_driver_and_load_page(url, wait_time=10):
     driver = None
@@ -117,22 +116,22 @@ def get_clipboard_content(wait_after_click=2, max_retries=3):
                     if result.returncode == 0:
                         content = result.stdout.strip()
                         if content:
-                            print(f"✅ CI环境：第{retry+1}次读取剪贴板成功")
+                            print(f"✅ CI环境：第{retry + 1}次读取剪贴板成功")
                             return content
                 else:
                     # 本地环境：用pyperclip读取
                     content = pyperclip.paste().strip()
                     if content:
-                        print(f"✅ 本地环境：第{retry+1}次读取剪贴板成功")
+                        print(f"✅ 本地环境：第{retry + 1}次读取剪贴板成功")
                         return content
 
                 # 若内容为空，等待后重试
                 if retry < max_retries - 1:
                     time.sleep(1)  # 重试间隔1秒
-                    print(f"🔄 第{retry+1}次读取为空，准备重试...")
+                    print(f"🔄 第{retry + 1}次读取为空，准备重试...")
 
             except Exception as e:
-                print(f"⚠️ 第{retry+1}次读取失败：{str(e)}")
+                print(f"⚠️ 第{retry + 1}次读取失败：{str(e)}")
                 if retry < max_retries - 1:
                     time.sleep(1)
 
@@ -143,6 +142,7 @@ def get_clipboard_content(wait_after_click=2, max_retries=3):
     except Exception as e:
         print(f"❌ 剪贴板操作整体失败：{str(e)}")
         return None
+
 
 # 鼠标悬停
 def simulate_mouse_hover(driver, target_selector, selector_type=By.CSS_SELECTOR, wait_time=10):
@@ -254,7 +254,6 @@ def get_div_displayed_text(driver, iframe_selector, target_div_selector):
 
 
 def capture_post_with_selenium_wire(driver, button_selector, target_keyword, timeout=30):
-
     try:
         # 2. 等待按钮可点击并点击
         button = WebDriverWait(driver, 10).until(
@@ -294,6 +293,7 @@ def capture_post_with_selenium_wire(driver, button_selector, target_keyword, tim
         print(f"❌ 操作失败：{str(e)}")
         return None
 
+
 # 关闭广告
 def close_ad_popup(driver, wait_time=5):
     ad_close_selectors = [
@@ -318,6 +318,7 @@ def close_ad_popup(driver, wait_time=5):
     except Exception as e:
         print(f"⚠️  广告关闭异常：{str(e)}，继续后续操作")
         return True
+
 
 # 完整流程：加载网页 → 点击复制按钮 → 获取剪贴板内容
 def full_copy_workflow(url, wait_after_click=1):
@@ -398,7 +399,8 @@ def full_copy_workflow(url, wait_after_click=1):
     # text_div_selector = "//*[@id=\"__nuxt\"]"
     # get_div_displayed_text(driver, iframe_selector, text_div_selector)
 
-    params = capture_post_with_selenium_wire(driver, button_selector= "//button[text()='订阅']", target_keyword="/text/upload")
+    params = capture_post_with_selenium_wire(driver, button_selector="//button[text()='订阅']",
+                                             target_keyword="/text/upload")
     clipboard_content = params['body'].get('text')
 
     # 9、点击复制按钮
@@ -416,23 +418,16 @@ def full_copy_workflow(url, wait_after_click=1):
     return clipboard_content
 
 
-# 示例使用
-if __name__ == "__main__":
-    # 配置参数（根据目标页面修改）
-    target_url = "https://v2rayse.com/live-node"
-    # 若按钮用XPath定位，可改为：
-    # copy_button_selector = '//button[contains(text(), "复制")]'
-    # selector_type = By.XPATH
-    # 执行完整流程
-    result = full_copy_workflow(url=target_url, wait_after_click=1.5)
-
+def save_result(result, file_name_prefix=""):
     # 输出结果
     if result:
         print(f"\n📋 复制的内容为：\n{result}")
-        result = (result.replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
-                  .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:', '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
+        result = (
+            result.replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
+            .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:',
+                     '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
         print(f"📋 修改后的内容：\n{result}")
-        file_path = datetime.now().strftime('%Y%m%d%H')+"/mihomo.yaml"
+        file_path = datetime.now().strftime('%Y%m%d%H') + "/" + file_name_prefix + "mihomo.yaml"
         # 1. 提取文件所在的目录路径
         dir_path = os.path.dirname(file_path)
         # 2. 若目录不存在，则递归创建（包括所有父目录）
@@ -443,3 +438,19 @@ if __name__ == "__main__":
             f.write(result)
     else:
         print("❌ 复制失败")
+
+
+# 示例使用
+if __name__ == "__main__":
+    # 配置参数（根据目标页面修改）
+    target_url = "https://v2rayse.com/live-node"
+    # 若按钮用XPath定位，可改为：
+    # copy_button_selector = '//button[contains(text(), "复制")]'
+    # selector_type = By.XPATH
+    # 执行完整流程
+    result = full_copy_workflow(url=target_url, wait_after_click=1.5)
+    save_result(result)
+
+    free_url = "https://v2rayse.com/free-node"
+    result = full_copy_workflow(url=free_url, wait_after_click=1.5)
+    save_result(result, "free_")
