@@ -2,7 +2,7 @@
 # pip3 install pyperclip
 # pip3 install setuptools
 # pip3 install webdriver-manager
-
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -286,7 +286,7 @@ if __name__ == "__main__":
         result = (result.replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
                   .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:', '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
         print(f"📋 修改后的内容：\n{result}")
-        with open("mihomo.yaml", 'w') as f:
+        with open(datetime.now().strftime('%Y%m%d%H%M%S')+"/mihomo.yaml", 'w') as f:
             f.write(result)
     else:
         print("❌ 复制失败")
