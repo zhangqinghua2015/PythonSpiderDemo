@@ -8,7 +8,7 @@ on:
     - cron: '0 2/1 * * *'
  
 jobs:
-  cfmem:
+  v2rayse:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
