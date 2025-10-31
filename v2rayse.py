@@ -30,12 +30,13 @@ def init_driver_and_load_page(url, wait_time=10):
         options.add_argument(f"--user-data-dir={temp_dir}")
         # 解决Ubuntu权限问题
         options.add_argument("--no-sandbox")
-        # # 禁用共享内存（CI环境可能限制）
-        # options.add_argument("--disable-dev-shm-usage")
-        # # 无头模式（CI环境无GUI）
-        # options.add_argument("--headless=new")
-        # # 禁用GPU加速
-        # options.add_argument("--disable-gpu")
+        # CI环境强制启用无头模式
+        if os.getenv("CI", "false").lower() == "true":
+            options.add_argument("--headless=new")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            # 增加窗口大小，避免元素定位问题
+            options.add_argument("--window-size=1280,720")
         driver = webdriver.Chrome(options=options)
         # options = uc.ChromeOptions()
         # options.add_argument("--no-sandbox")

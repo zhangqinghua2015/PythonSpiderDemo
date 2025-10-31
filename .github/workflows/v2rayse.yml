@@ -30,8 +30,14 @@ jobs:
         pip install pyperclip
         pip install setuptools
         pip install webdriver-manager
+
+    # 启动X虚拟服务器（指定显示端口:99）
+    # 导出显示变量，让Chrome和xclip使用虚拟显示器
     - name: get results
       run: |
+        Xvfb :99 -screen 0 1280x720x16 &
+        export DISPLAY=:99
+        python v2rayse.py
         xvfb-run -a python v2rayse.py
         git config --global user.email "${{ secrets.GT_EMAIL }}"
         git config --global user.name "${{ secrets.GT_ACTOR }}"
