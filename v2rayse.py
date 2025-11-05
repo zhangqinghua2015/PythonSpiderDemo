@@ -432,7 +432,7 @@ def save_result(result, file_name_prefix=""):
         # 1. 提取文件所在的目录路径
         dir_path = os.path.dirname(file_path)
         # 2. 若目录不存在，则递归创建（包括所有父目录）
-        if not os.path.exists(dir_path):
+        if dir_path and dir_path.strip() and not os.path.exists(dir_path):
             os.makedirs(dir_path, exist_ok=True)  # exist_ok=True 避免目录已存在时的错误
             print(f"✅ 文件夹不存在，已自动创建：{dir_path}")
         with open(file_path, 'w') as f:
