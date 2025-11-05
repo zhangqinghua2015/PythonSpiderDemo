@@ -427,7 +427,8 @@ def save_result(result, file_name_prefix=""):
             .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:',
                      '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
         print(f"📋 修改后的内容：\n{result}")
-        file_path = datetime.now().strftime('%Y%m%d%H') + "/" + file_name_prefix + "mihomo.yaml"
+        # file_path = datetime.now().strftime('%Y%m%d%H') + "/" + file_name_prefix + "mihomo.yaml"
+        file_path = file_name_prefix + "mihomo.yaml"
         # 1. 提取文件所在的目录路径
         dir_path = os.path.dirname(file_path)
         # 2. 若目录不存在，则递归创建（包括所有父目录）
@@ -449,7 +450,7 @@ if __name__ == "__main__":
     # selector_type = By.XPATH
     # 执行完整流程
     result = full_copy_workflow(url=target_url, wait_after_click=1.5)
-    save_result(result)
+    save_result(result, "live_")
 
     free_url = "https://v2rayse.com/free-node"
     result = full_copy_workflow(url=free_url, wait_after_click=1.5)
