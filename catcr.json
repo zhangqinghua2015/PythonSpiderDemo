@@ -1,6 +1,6 @@
 {
-  "spider": "https://gh-proxy.com/https://github.com/lemonguo121/BoxRes/raw/main/Myuse/lib/fm.jar",
-  "wallpaper": "http://饭太硬.top/深色壁纸/api.php",
+  "spider": "./jar/fan.txt;md5;8432d174d72d5b608ae1bcd16d966847",
+  "wallpaper": "https://avatars.githubusercontent.com/u/58679624?v=4",
   "lives": [
     {
       "group": "redirect",
