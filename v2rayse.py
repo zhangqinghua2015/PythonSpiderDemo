@@ -1,5 +1,13 @@
-# 依赖安装命令
-# pip3 install selenium selenium-wire blinker==1.7.0 pyperclip setuptools webdriver-manager
+"""
+V2RaySE 网站爬虫工具
+用于自动化获取 V2Ray 节点配置信息
+
+该脚本使用 Selenium 自动化浏览器操作，从 V2RaySE 网站获取节点配置信息，
+并将其保存为 mihomo 格式的配置文件。
+
+依赖安装命令
+pip3 install selenium selenium-wire blinker==1.7.0 pyperclip setuptools webdriver-manager
+"""
 
 # 标准库导入
 import json
@@ -17,19 +25,13 @@ from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException
 )
-from selenium.webdriver.common.action_chains import ActionChains  # 用于鼠标操作
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-# from selenium import webdriver
-from seleniumwire import webdriver  # 注意：从seleniumwire导入驱动
+from seleniumwire import webdriver
 
-# 未使用的导入（保留注释）
-# import undetected_chromedriver as uc
-
-
-
-# 提取常量
+# 常量定义
 NO_PASSWD_BUTTON_TEXT = "免密码进入"
 NO_PASSWD_BUTTON_SELECTOR = "//*[@id=\"__nuxt\"]/div/main/div[1]/div/div[1]/div/div[2]/div/div[3]/button[1]"
 WATCH_BUTTON_TEXT = "查看节点"
@@ -37,14 +39,16 @@ WATCH_BUTTON_SELECTOR = "//*[@id=\"reka-dialog-content-v-0-0-0-0-0\"]/div[2]/div
 WAIT_AFTER_NO_PASSWD = 13  # 秒
 MAX_RETRIES = 1  # 最大重试次数
 
-# 1. 初始化驱动并加载网页
 def init_driver_and_load_page(url, wait_time=30):
     """
-    初始化驱动并加载网页
+    初始化浏览器驱动并加载指定网页
     
-    :param url: 要加载的网页URL
-    :param wait_time: 页面加载超时时间（秒）
-    :return: 浏览器驱动实例 / None（失败）
+    Args:
+        url (str): 要加载的网页URL
+        wait_time (int): 页面加载超时时间（秒）
+        
+    Returns:
+        webdriver.Chrome: 浏览器驱动实例，失败时返回None
     """
     driver = None
     try:
@@ -101,17 +105,19 @@ def init_driver_and_load_page(url, wait_time=30):
         return None
 
 
-# 2. 执行点击操作（可用于点击复制按钮）
 def execute_click(driver, click_selector, target_element=None, selector_type=By.CSS_SELECTOR, wait_time=10):
     """
-    执行点击操作
+    执行元素点击操作
     
-    :param driver: 浏览器驱动实例
-    :param click_selector: 元素选择器
-    :param target_element: 目标元素实例（可选）
-    :param selector_type: 选择器类型（默认By.CSS_SELECTOR）
-    :param wait_time: 等待元素加载的时间（秒）
-    :return: True（成功）/ False（失败）
+    Args:
+        driver: 浏览器驱动实例
+        click_selector (str): 元素选择器
+        target_element: 目标元素实例（可选）
+        selector_type: 选择器类型，默认为CSS选择器
+        wait_time (int): 等待超时时间（秒）
+        
+    Returns:
+        bool: 点击成功返回True，失败返回False
     """
     if not driver:
         print(f"❌ 驱动实例为空，无法执行点击")
@@ -135,21 +141,23 @@ def execute_click(driver, click_selector, target_element=None, selector_type=By.
                 driver.execute_script("arguments[0].click();", target_element)
                 print(f"✅ 强制点击元素：选择器={target_element}")
                 return True
-            except Exception as e:
-                print(f"❌ 强制点击元素失败：{str(e)}")
+            except Exception as js_error:
+                print(f"❌ 强制点击元素失败：{str(js_error)}")
         else:
             print(f"❌ 点击失败：选择器={click_selector}，错误信息：{str(e)}")
         return False
 
 
-# 3. 从剪贴板获取内容（点击复制按钮后调用）
 def get_clipboard_content(wait_after_click=2, max_retries=3):
     """
     从系统剪贴板获取内容（优化版：兼容本地和CI环境，支持重试）
     
-    :param wait_after_click: 点击后等待复制完成的时间（秒）
-    :param max_retries: 读取失败时的重试次数
-    :return: 剪贴板内容（str）/ None（失败）
+    Args:
+        wait_after_click (int): 点击后等待复制完成的时间（秒）
+        max_retries (int): 读取失败时的重试次数
+        
+    Returns:
+        str: 剪贴板内容，失败时返回None
     """
     try:
         # 等待复制操作完成（CI环境建议延长至2-3秒）
@@ -200,16 +208,18 @@ def get_clipboard_content(wait_after_click=2, max_retries=3):
         return None
 
 
-# 鼠标悬停
 def simulate_mouse_hover(driver, target_selector, selector_type=By.CSS_SELECTOR, wait_time=10):
     """
     模拟鼠标悬停在目标元素上
     
-    :param driver: Selenium浏览器驱动实例
-    :param target_selector: 目标元素的选择器
-    :param selector_type: 选择器类型（默认CSS，可改为By.XPATH等）
-    :param wait_time: 等待元素加载的最大时间（秒）
-    :return: 目标元素实例（悬停成功）/ None（失败）
+    Args:
+        driver: Selenium浏览器驱动实例
+        target_selector (str): 目标元素的选择器
+        selector_type: 选择器类型，默认为CSS选择器
+        wait_time (int): 等待元素加载的最大时间（秒）
+        
+    Returns:
+        WebElement: 目标元素实例（悬停成功）或None（失败）
     """
     try:
         # 等待目标元素可见且可交互
@@ -234,17 +244,19 @@ def simulate_mouse_hover(driver, target_selector, selector_type=By.CSS_SELECTOR,
         return None
 
 
-# 通过子元素的文本定位其父元素
 def find_parent_by_child_text(driver, child_text, parent_tag=None, exact_match=True, wait_time=10):
     """
     通过子元素的文本定位其父元素
     
-    :param driver: Selenium浏览器驱动
-    :param child_text: 子元素包含的文本
-    :param parent_tag: 父元素的标签名（可选，如'div'、'li'，不指定则匹配所有标签）
-    :param exact_match: 是否精确匹配文本（True=完全一致，False=包含即可）
-    :param wait_time: 等待元素加载的时间（秒）
-    :return: 父元素实例 / None（未找到）
+    Args:
+        driver: Selenium浏览器驱动
+        child_text (str): 子元素包含的文本
+        parent_tag (str): 父元素的标签名（可选，如'div'、'li'，不指定则匹配所有标签）
+        exact_match (bool): 是否精确匹配文本（True=完全一致，False=包含即可）
+        wait_time (int): 等待元素加载的时间（秒）
+        
+    Returns:
+        WebElement: 父元素实例或None（未找到）
     """
     try:
         # 构建XPath表达式：先定位子元素，再取父元素
@@ -276,16 +288,56 @@ def find_parent_by_child_text(driver, child_text, parent_tag=None, exact_match=T
         return None
 
 
-# 捕获 POST 请求
+def find_element_by_text(driver, text, exact_match=True, element_tag="*", wait_time=10):
+    """
+    通过文本内容直接查找元素
+    
+    Args:
+        driver: Selenium浏览器驱动
+        text (str): 要查找的文本内容
+        exact_match (bool): 是否精确匹配文本（True=完全一致，False=包含即可）
+        element_tag (str): 元素标签名（默认为'*'，匹配所有标签）
+        wait_time (int): 等待元素加载的时间（秒）
+        
+    Returns:
+        WebElement: 找到的元素实例或None（未找到）
+    """
+    try:
+        # 构建XPath表达式
+        if exact_match:
+            # 精确匹配文本
+            xpath = f"//{element_tag}[text()='{text}']"
+        else:
+            # 模糊匹配（包含文本）
+            xpath = f"//{element_tag}[contains(text(), '{text}')]"
+        
+        # 等待元素出现并返回
+        element = WebDriverWait(driver, wait_time).until(
+            EC.presence_of_element_located((By.XPATH, xpath))
+        )
+        print(f"✅ 找到文本为'{text}'的元素（XPath：{xpath}）")
+        return element
+        
+    except TimeoutException:
+        print(f"❌ 超时：未找到文本为'{text}'的元素")
+        return None
+    except Exception as e:
+        print(f"❌ 查找元素失败：{str(e)}")
+        return None
+
+
 def capture_post_with_selenium_wire(driver, button_selector, target_keyword, timeout=30):
     """
     使用 selenium-wire 捕获指定的 POST 请求
     
-    :param driver: Selenium 驱动实例
-    :param button_selector: 触发请求的按钮选择器
-    :param target_keyword: 请求 URL 中包含的关键字
-    :param timeout: 捕获请求的超时时间（秒）
-    :return: 请求信息字典 / None（失败）
+    Args:
+        driver: Selenium 驱动实例
+        button_selector (str): 触发请求的按钮选择器
+        target_keyword (str): 请求 URL 中包含的关键字
+        timeout (int): 捕获请求的超时时间（秒）
+        
+    Returns:
+        dict: 请求信息字典或None（失败）
     """
     try:
         # 2. 等待按钮可点击并点击
@@ -307,7 +359,7 @@ def capture_post_with_selenium_wire(driver, button_selector, target_keyword, tim
                     if body:
                         try:
                             parsed_body = json.loads(body)
-                        except:
+                        except json.JSONDecodeError:
                             parsed_body = parse_qs(body)
                             parsed_body = {k: v[0] for k, v in parsed_body.items()}
                     
@@ -327,13 +379,31 @@ def capture_post_with_selenium_wire(driver, button_selector, target_keyword, tim
         return None
 
 
-def click_button_with_retry(driver, button_text, button_selector, max_retry=1):
-    """点击按钮的通用函数，支持重试机制"""
+def click_button_with_retry(driver, button_text, button_selector, max_retry=1, find_parent=True):
+    """
+    点击按钮的通用函数，支持重试机制
+    
+    Args:
+        driver: 浏览器驱动实例
+        button_text (str): 按钮文本
+        button_selector (str): 按钮选择器
+        max_retry (int): 最大重试次数
+        find_parent (bool): 是否查找父元素，默认为True
+        
+    Returns:
+        bool: 点击成功返回True，失败返回False
+    """
     retry_count = 0
     while retry_count <= max_retry:
         try:
-            # 优先通过文本查找按钮
-            button = find_parent_by_child_text(driver, button_text, "button")
+            # 根据find_parent参数决定查找方式
+            button = None
+            if find_parent:
+                # 查找文本元素的父元素
+                button = find_parent_by_child_text(driver, button_text, "button")
+            else:
+                # 直接查找文本元素本身
+                button = find_element_by_text(driver, button_text, element_tag="button")
             
             # 使用execute_click函数执行点击
             if execute_click(driver, button_selector, button, selector_type=By.XPATH):
@@ -354,14 +424,16 @@ def click_button_with_retry(driver, button_text, button_selector, max_retry=1):
     return False
 
 
-# 完整流程：加载网页 → 点击复制按钮 → 获取剪贴板内容
 def full_copy_workflow(url, wait_after_click=1):
     """
     完整流程：加载网页 → 点击复制按钮 → 获取剪贴板内容
     
-    :param url: 要加载的网页URL
-    :param wait_after_click: 点击后等待复制完成的时间（秒）
-    :return: 复制的内容（str）/ None（失败）
+    Args:
+        url (str): 要加载的网页URL
+        wait_after_click (int): 点击后等待复制完成的时间（秒）
+        
+    Returns:
+        str: 复制的内容或None（失败）
     """
     # 步骤1：加载网页
     driver = init_driver_and_load_page(url)
@@ -388,12 +460,12 @@ def full_copy_workflow(url, wait_after_click=1):
     time.sleep(WAIT_AFTER_NO_PASSWD)
     
     # 3、点击查看节点按钮（支持重试机制）
-    print("📌 正在点击'查看节点'按钮...")
+    print("📌 准备点击'查看节点'按钮...")
     retry_count = 0
     click_watch_success = False
     
     while retry_count <= MAX_RETRIES and not click_watch_success:
-        click_watch_success = click_button_with_retry(driver, WATCH_BUTTON_TEXT, WATCH_BUTTON_SELECTOR)
+        click_watch_success = click_button_with_retry(driver, WATCH_BUTTON_TEXT, WATCH_BUTTON_SELECTOR, find_parent=False)
         
         if click_watch_success:
             break
@@ -464,14 +536,13 @@ def full_copy_workflow(url, wait_after_click=1):
     return clipboard_content
 
 
-# 保存结果
 def save_result(result, file_name_prefix=""):
     """
     保存结果到文件
     
-    :param result: 要保存的内容
-    :param file_name_prefix: 文件名前缀
-    :return: None
+    Args:
+        result (str): 要保存的内容
+        file_name_prefix (str): 文件名前缀
     """
     # 输出结果
     if result:
@@ -495,8 +566,10 @@ def save_result(result, file_name_prefix=""):
         print("❌ 复制失败")
 
 
-# 示例使用
 if __name__ == "__main__":
+    """
+    主函数：执行完整的节点获取流程
+    """
     # 配置参数（根据目标页面修改）
     target_url = "https://v2rayse.com/live-node"
     # 若按钮用XPath定位，可改为：
