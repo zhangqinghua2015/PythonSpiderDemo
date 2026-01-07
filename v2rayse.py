@@ -446,7 +446,7 @@ def full_copy_workflow(url, wait_after_click=1):
         lambda d: d.execute_script("return document.readyState") == "complete"
     )
     print("✅ 页面已完全加载")
-    time.sleep(5)
+    time.sleep(20)
     
     # 1、点击免密码进入按钮
     print("📌 正在点击'免密码进入'按钮...")
