@@ -39,6 +39,115 @@ WATCH_BUTTON_SELECTOR = "//*[@id=\"reka-dialog-content-v-0-0-0-0-0\"]/div[2]/div
 WAIT_AFTER_NO_PASSWD = 13  # 秒
 MAX_RETRIES = 1  # 最大重试次数
 
+def remove_ads_elements(driver):
+    """
+    精准移除v2rayse.com页面中的广告元素，避免影响正常内容
+    
+    Args:
+        driver: 浏览器驱动实例
+    """
+    try:
+        # 精准的广告元素选择器，专门针对v2rayse.com网站
+        ad_selectors = [
+            # Google Adsense广告
+            (By.CSS_SELECTOR, "ins.adsbygoogle"),
+            # iframe广告（Google Adsense通常通过iframe加载）
+            (By.CSS_SELECTOR, "iframe[src*='googlesyndication']"),
+            (By.CSS_SELECTOR, "iframe[src*='doubleclick']"),
+            # 通用iframe广告标识
+            (By.CSS_SELECTOR, "iframe[id*='aswift']"),
+            (By.CSS_SELECTOR, "iframe[id*='google_ads']"),
+            # 特定的广告容器
+            (By.CSS_SELECTOR, "[class*='ad'][class*='container']"),
+            # 广告标识图标
+            (By.CSS_SELECTOR, ".iconify.i-mdi\\:google-ads"),
+        ]
+        
+        # 遍历并隐藏广告元素
+        removed_count = 0
+        for selector_type, selector in ad_selectors:
+            try:
+                elements = driver.find_elements(selector_type, selector)
+                for element in elements:
+                    try:
+                        # 检查元素是否可见
+                        if element.is_displayed():
+                            # 使用JavaScript隐藏元素（避免破坏页面布局）
+                            driver.execute_script("arguments[0].style.display='none';", element)
+                            removed_count += 1
+                    except Exception:
+                        pass  # 忽略单个元素处理失败
+            except Exception:
+                pass  # 忽略选择器查找失败
+        
+        print(f"✅ 广告元素清理完成，共隐藏 {removed_count} 个广告元素")
+    except Exception as e:
+        print(f"⚠️  广告清理过程出现异常: {e}")
+
+def close_ad_popup(driver, wait_time=5):
+    """
+    关闭广告弹窗，精准识别广告关闭按钮
+    
+    Args:
+        driver: 浏览器驱动实例
+        wait_time (int): 等待时间（秒）
+        
+    Returns:
+        bool: 关闭成功返回True，失败返回False
+    """
+    # 精准的广告关闭按钮选择器
+    ad_close_selectors = [
+        # 通用关闭按钮（在广告容器内）
+        (By.XPATH, "//*[contains(@class, 'ad') or contains(@id, 'ad')]//*[contains(@class, 'close') or @aria-label='Close' or @title='Close']"),
+        # 包含关闭文本的按钮（限定在广告容器内）
+        (By.XPATH, "//*[contains(@class, 'ad') or contains(@id, 'ad')]//button[contains(text(), '关闭') or contains(text(), 'Close') or contains(text(), '×')]"),
+        # 特定的关闭按钮类名
+        (By.CSS_SELECTOR, ".ad-close, .close-ad"),
+    ]
+    
+    try:
+        closed_count = 0
+        for selector_type, selector in ad_close_selectors:
+            try:
+                elements = driver.find_elements(selector_type, selector)
+                for element in elements:
+                    try:
+                        # 检查元素是否可见
+                        if element.is_displayed():
+                            element.click()
+                            print(f"✅ 已关闭广告弹窗: {selector}")
+                            closed_count += 1
+                            time.sleep(0.5)  # 给一点时间让广告消失
+                    except Exception as e:
+                        print(f"⚠️  点击关闭按钮失败: {e}")
+                        continue
+            except Exception:
+                continue
+        
+        if closed_count > 0:
+            print(f"ℹ️  共关闭 {closed_count} 个广告弹窗")
+        else:
+            print("ℹ️  未检测到可关闭的广告弹窗")
+        return True
+    except Exception as e:
+        print(f"⚠️  广告关闭异常：{str(e)}")
+        return False
+
+def enhanced_remove_ads_elements(driver):
+    """
+    增强版广告移除函数，结合多种策略
+    
+    Args:
+        driver: 浏览器驱动实例
+    """
+    # 第一步：移除已知的广告元素
+    remove_ads_elements(driver)
+    time.sleep(1)
+    
+    # 第二步：尝试关闭广告弹窗
+    close_ad_popup(driver)
+    time.sleep(1)
+
 def init_driver_and_load_page(url, wait_time=30):
     """
     初始化浏览器驱动并加载指定网页
@@ -83,6 +192,23 @@ def init_driver_and_load_page(url, wait_time=30):
         # 启用隐私沙箱（现代广告拦截）
         options.add_argument("--enable-features=PrivacySandboxSettings3")
         
+        # 添加广告屏蔽规则
+        options.add_argument("--disable-ads")  # 禁用广告
+        options.add_argument("--disable-popup-blocking")  # 禁用弹窗阻止（我们自己处理）
+        
+        # 添加广告拦截规则
+        prefs = {
+            "profile.managed_default_content_settings.images": 2,  # 禁用图片
+            "profile.default_content_setting_values.notifications": 2,  # 禁用通知
+            "profile.managed_default_content_settings.plugins": 2,  # 禁用插件
+            "profile.managed_default_content_settings.popups": 2,  # 禁用弹窗
+            "profile.managed_default_content_settings.geolocation": 2,  # 禁用地理位置
+            "profile.managed_default_content_settings.media_stream": 2,  # 禁用媒体流
+            "profile.content_settings.exceptions.notifications": {},  # 禁用通知权限
+            "profile.content_settings.exceptions.popups": {}  # 禁用弹窗权限
+        }
+        options.add_experimental_option("prefs", prefs)
+        
         # CI环境强制启用无头模式
         if os.getenv("CI", "false").lower() == "true":
             options.add_argument("--headless=new")
@@ -97,6 +223,10 @@ def init_driver_and_load_page(url, wait_time=30):
         driver.set_page_load_timeout(wait_time)
         driver.get(url)
         print(f"✅ 成功加载网页：{url}")
+        
+        # 页面加载后立即移除已知的广告元素
+        remove_ads_elements(driver)
+        
         return driver
     except WebDriverException as e:
         print(f"❌ 网页加载失败：{str(e)}")
@@ -446,7 +576,10 @@ def full_copy_workflow(url, wait_after_click=1):
         lambda d: d.execute_script("return document.readyState") == "complete"
     )
     print("✅ 页面已完全加载")
-    time.sleep(5)
+    time.sleep(3)
+    
+    # 清理广告元素
+    enhanced_remove_ads_elements(driver)
     
     # 1、点击免密码进入按钮
     print("📌 正在点击'免密码进入'按钮...")
@@ -458,6 +591,9 @@ def full_copy_workflow(url, wait_after_click=1):
     # 2、等待页面加载
     print(f"⏳ 等待 {WAIT_AFTER_NO_PASSWD} 秒让页面加载完成...")
     time.sleep(WAIT_AFTER_NO_PASSWD)
+    
+    # 清理广告元素
+    enhanced_remove_ads_elements(driver)
     
     # 3、点击查看节点按钮（支持重试机制）
     print("📌 准备点击'查看节点'按钮...")
@@ -480,6 +616,9 @@ def full_copy_workflow(url, wait_after_click=1):
             print(f"⏳ 等待 {WAIT_AFTER_NO_PASSWD} 秒后再次尝试...")
             time.sleep(WAIT_AFTER_NO_PASSWD)
             retry_count += 1
+            
+            # 清理广告元素
+            enhanced_remove_ads_elements(driver)
         else:
             break
     
@@ -488,7 +627,7 @@ def full_copy_workflow(url, wait_after_click=1):
         driver.quit()
         return None
     
-    time.sleep(4)
+    time.sleep(2)
     # 4、点击全选
     select_all_button_selector = "#v-0-0-0-0-4"
     click_select_all = execute_click(driver, select_all_button_selector)
@@ -525,7 +664,7 @@ def full_copy_workflow(url, wait_after_click=1):
         return None
     
     # 8、等待10秒
-    time.sleep(4)
+    time.sleep(2)
         
     params = capture_post_with_selenium_wire(driver, button_selector="//button[text()='订阅']",
                                              target_keyword="/text/upload")
