@@ -630,7 +630,7 @@ def full_copy_workflow(url, wait_after_click=1):
 
     # time.sleep(4)
     # 4、点击全选
-    select_all_button_selector = "#v-0-0-0-0-4"
+    select_all_button_selector = 'button[aria-label="全选"]'
     click_select_all = execute_click(driver, select_all_button_selector)
     if not click_select_all:
         driver.quit()
@@ -638,8 +638,8 @@ def full_copy_workflow(url, wait_after_click=1):
     
     time.sleep(1)
     # 5、点击操作
-    operate_button_selector = "#reka-dropdown-menu-trigger-v-0-0-0-0-3"
-    click_operate = execute_click(driver, operate_button_selector)
+    operate_button_selector = '//button[contains(text(), "节点操作")]'
+    click_operate = execute_click(driver, operate_button_selector, selector_type=By.XPATH)
     if not click_operate:
         driver.quit()
         return None
