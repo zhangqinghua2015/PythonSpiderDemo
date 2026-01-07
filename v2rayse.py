@@ -638,7 +638,7 @@ def full_copy_workflow(url, wait_after_click=1):
     
     time.sleep(1)
     # 5、点击操作
-    operate_button_selector = '//button[contains(text(), "节点操作")]'
+    operate_button_selector = '//button[text()="节点操作"]'
     click_operate = execute_click(driver, operate_button_selector, selector_type=By.XPATH)
     if not click_operate:
         driver.quit()
