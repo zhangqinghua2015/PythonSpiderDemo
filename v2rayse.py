@@ -448,47 +448,47 @@ def full_copy_workflow(url, wait_after_click=1):
     print("✅ 页面已完全加载")
     time.sleep(20)
     
-    # 1、点击免密码进入按钮
-    print("📌 正在点击'免密码进入'按钮...")
-    if not click_button_with_retry(driver, NO_PASSWD_BUTTON_TEXT, NO_PASSWD_BUTTON_SELECTOR):
-        print("❌ 点击'免密码进入'按钮失败")
-        driver.quit()
-        return None
+    # # 1、点击免密码进入按钮
+    # print("📌 正在点击'免密码进入'按钮...")
+    # if not click_button_with_retry(driver, NO_PASSWD_BUTTON_TEXT, NO_PASSWD_BUTTON_SELECTOR):
+    #     print("❌ 点击'免密码进入'按钮失败")
+    #     driver.quit()
+    #     return None
     
-    # 2、等待页面加载
-    print(f"⏳ 等待 {WAIT_AFTER_NO_PASSWD} 秒让页面加载完成...")
-    time.sleep(WAIT_AFTER_NO_PASSWD)
+    # # 2、等待页面加载
+    # print(f"⏳ 等待 {WAIT_AFTER_NO_PASSWD} 秒让页面加载完成...")
+    # time.sleep(WAIT_AFTER_NO_PASSWD)
     
-    # 3、点击查看节点按钮（支持重试机制）
-    print("📌 准备点击'查看节点'按钮...")
-    retry_count = 0
-    click_watch_success = False
-    
-    while retry_count <= MAX_RETRIES and not click_watch_success:
-        click_watch_success = click_button_with_retry(driver, WATCH_BUTTON_TEXT, WATCH_BUTTON_SELECTOR, find_parent=False)
+    # # 3、点击查看节点按钮（支持重试机制）
+    # print("📌 准备点击'查看节点'按钮...")
+    # retry_count = 0
+    # click_watch_success = False
+    # 
+    # while retry_count <= MAX_RETRIES and not click_watch_success:
+    #     click_watch_success = click_button_with_retry(driver, WATCH_BUTTON_TEXT, WATCH_BUTTON_SELECTOR, find_parent=False)
         
-        if click_watch_success:
-            break
-        elif retry_count < MAX_RETRIES:
-            # 未找到"查看节点"按钮，重新点击"免密码进入"
-            print("🔄 '查看节点'按钮未找到，正在重新点击'免密码进入'...")
-            if not click_button_with_retry(driver, NO_PASSWD_BUTTON_TEXT, NO_PASSWD_BUTTON_SELECTOR):
-                print("❌ 重新点击'免密码进入'按钮失败")
-                driver.quit()
-                return None
+    #     if click_watch_success:
+    #         break
+    #     elif retry_count < MAX_RETRIES:
+    #         # 未找到"查看节点"按钮，重新点击"免密码进入"
+    #         print("🔄 '查看节点'按钮未找到，正在重新点击'免密码进入'...")
+    #         if not click_button_with_retry(driver, NO_PASSWD_BUTTON_TEXT, NO_PASSWD_BUTTON_SELECTOR):
+    #             print("❌ 重新点击'免密码进入'按钮失败")
+    #             driver.quit()
+    #             return None
             
-            print(f"⏳ 等待 {WAIT_AFTER_NO_PASSWD} 秒后再次尝试...")
-            time.sleep(WAIT_AFTER_NO_PASSWD)
-            retry_count += 1
-        else:
-            break
+    #         print(f"⏳ 等待 {WAIT_AFTER_NO_PASSWD} 秒后再次尝试...")
+    #         time.sleep(WAIT_AFTER_NO_PASSWD)
+    #         retry_count += 1
+    #     else:
+    #         break
     
-    if not click_watch_success:
-        print("❌ 重试次数用尽，仍未找到'查看节点'按钮")
-        driver.quit()
-        return None
+    # if not click_watch_success:
+    #     print("❌ 重试次数用尽，仍未找到'查看节点'按钮")
+    #     driver.quit()
+    #     return None
     
-    time.sleep(4)
+    # time.sleep(4)
     # 4、点击全选
     select_all_button_selector = "#v-0-0-0-0-4"
     click_select_all = execute_click(driver, select_all_button_selector)
@@ -528,7 +528,7 @@ def full_copy_workflow(url, wait_after_click=1):
     time.sleep(4)
         
     params = capture_post_with_selenium_wire(driver, button_selector="//button[text()='订阅']",
-                                             target_keyword="/text/upload")
+                                             target_keyword="/upload-text")
     clipboard_content = params['body'].get('text')
       
     # 关闭浏览器
