@@ -688,7 +688,7 @@ def save_result(result, file_name_prefix=""):
     if result:
         # print(f"\n📋 复制的内容为：\n{result}")
         result = (
-            result.replace("  alterId: 0", "").replace("  type: vmess", "  type: vmess\n  alterId: 0")
+            result.replace("  alterId: 0", "").replace("  type: vmess", "  type: vmess\n    alterId: 0")
             .replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
             .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:',
                      '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
