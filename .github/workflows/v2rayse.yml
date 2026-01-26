@@ -27,6 +27,7 @@ jobs:
         pip install setuptools
         pip install webdriver-manager
         pip install blinker==1.7.0
+        pip install ruamel.yaml
 
     # 安装Chrome的开源版本（Chromium）
     - name: Install Chrome
