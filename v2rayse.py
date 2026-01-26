@@ -6,7 +6,7 @@ V2RaySE 网站爬虫工具
 并将其保存为 mihomo 格式的配置文件。
 
 依赖安装命令
-pip3 install selenium selenium-wire blinker==1.7.0 pyperclip setuptools webdriver-manager
+pip3 install selenium selenium-wire blinker==1.7.0 pyperclip setuptools webdriver-manager ruamel.yaml
 """
 
 # 标准库导入
@@ -17,6 +17,8 @@ import tempfile
 import time
 from datetime import datetime
 from urllib.parse import parse_qs
+from ruamel.yaml import YAML
+from io import StringIO
 
 # 第三方库导入
 import pyperclip  # 用于访问系统剪贴板
@@ -687,11 +689,47 @@ def save_result(result, file_name_prefix=""):
     # 输出结果
     if result:
         # print(f"\n📋 复制的内容为：\n{result}")
-        result = (
-            result.replace("    alterId: 0\n", "").replace("  type: vmess", "  type: vmess\n    alterId: 0")
-            .replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
-            .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:',
-                     '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
+        # result = (
+        #     result.replace("    alterId: 0\n", "").replace("  type: vmess", "  type: vmess\n    alterId: 0")
+        #     .replace("  - GEOIP,CN,🎯 全球直连", "  - DOMAIN-KEYWORD,google,🚀 节点选择\n  - GEOIP,CN,🎯 全球直连")
+        #     .replace('\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:',
+        #              '\n  - name: 🐟 漏网之鱼\n    type: select\n    proxies:\n      - DIRECT'))
+        # 初始化 ruamel.yaml
+        yaml = YAML()
+        yaml.preserve_quotes = True
+        yaml.default_flow_style = False
+        yaml.indent(mapping=2, sequence=2, offset=0)
+        
+        # 解析 YAML
+        data = yaml.load(result)
+        
+        # 处理 vmess 节点，添加 alterId
+        if 'proxies' in data:
+            for proxy in data['proxies']:
+                if proxy.get('type') == 'vmess' and 'alterId' not in proxy:
+                    proxy['alterId'] = 0
+        
+        # 处理规则：在 GEOIP,CN 前添加 google 规则
+        if 'rules' in data:
+            rules = data['rules']
+            for i, rule in enumerate(rules):
+                if isinstance(rule, str) and 'GEOIP,CN,🎯 全球直连' in rule:
+                    rules.insert(i, 'DOMAIN-KEYWORD,google,🚀 节点选择')
+                    break
+        
+        # 处理代理组：给漏网之鱼添加 DIRECT
+        if 'proxy-groups' in data:
+            for group in data['proxy-groups']:
+                if group.get('name') == '🐟 漏网之鱼':
+                    if 'proxies' in group and 'DIRECT' not in group['proxies']:
+                        group['proxies'].insert(0, 'DIRECT')
+                    break
+        
+        # 转回 YAML 字符串
+        stream = StringIO()
+        yaml.dump(data, stream)
+        result = stream.getvalue()
+        
         # print(f"📋 修改后的内容：\n{result}")
         # file_path = datetime.now().strftime('%Y%m%d%H') + "/" + file_name_prefix + "mihomo.yaml"
         file_path = file_name_prefix + "mihomo.yaml"
