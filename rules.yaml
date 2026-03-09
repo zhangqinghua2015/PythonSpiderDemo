@@ -13,3 +13,5 @@
 - RULE-SET,cncidr,🎯 全球直连
 - RULE-SET,lancidr,🎯 全球直连
 - RULE-SET,applications,🎯 全球直连
+- DOMAIN-KEYWORD,telegram,🚀 节点选择
+- DOMAIN,cdn.jsdelivr.net,🚀 节点选择
