@@ -717,11 +717,13 @@ def save_result(result, file_name_prefix=""):
         else:
             data['rule-providers'] = rule_providers
         
-        # 将rules.yaml中的内容，添加到result的rules：节点下，rules 节点中原来的子节点要保留
+        # 将rules.yaml中的内容，添加到result的rules：节点下 要在GEOIP,CN,🎯 全球直连 之前，rules 节点中原来的子节点要保留
         with open('rules.yaml', 'r') as f:
             rules = yaml.load(f)
         if 'rules' in data:
-            data['rules'].extend(rules)
+            rules_index = data['rules'].index('GEOIP,CN,🎯 全球直连')
+            for i, rule in enumerate(rules):
+                data['rules'].insert(rules_index + i, rule)
         else:
             data['rules'] = rules
         
