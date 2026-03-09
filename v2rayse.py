@@ -709,6 +709,23 @@ def save_result(result, file_name_prefix=""):
                 if proxy.get('type') == 'vmess' and 'alterId' not in proxy:
                     proxy['alterId'] = 0
         
+        # 将rule-provider.yaml中的内容，添加到result的 rule-providers: 节点下，rule-providers 节点中原来的子节点要保留
+        with open('rule-provider.yaml', 'r') as f:
+            rule_providers = yaml.load(f)
+        if 'rule-providers' in data:
+            data['rule-providers'].update(rule_providers)
+        else:
+            data['rule-providers'] = rule_providers
+        
+        # 将rules.yaml中的内容，添加到result的rules：节点下，rules 节点中原来的子节点要保留
+        with open('rules.yaml', 'r') as f:
+            rules = yaml.load(f)
+        if 'rules' in data:
+            data['rules'].extend(rules)
+        else:
+            data['rules'] = rules
+        
+        
         # 处理规则：在 GEOIP,CN 前添加 google 规则
         if 'rules' in data:
             rules = data['rules']
