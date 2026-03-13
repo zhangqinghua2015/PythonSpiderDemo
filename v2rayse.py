@@ -734,6 +734,10 @@ def save_result(result, file_name_prefix=""):
                 "224.0.0.0/4",       # 多播地址
                 "255.255.255.255/32" # 广播地址
             ]
+            # tun模式下，可以让局域网内其他机器ssh连接
+            data['tun']['inet4-route-exclude-address'] = [
+                "192.168.0.0/16"
+            ]
 
         # 将rule-provider.yaml中的内容，添加到result的 rule-providers: 节点下，rule-providers 节点中原来的子节点要保留
         with open('rule-provider.yaml', 'r') as f:
