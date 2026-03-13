@@ -708,7 +708,33 @@ def save_result(result, file_name_prefix=""):
             for proxy in data['proxies']:
                 if proxy.get('type') == 'vmess' and 'alterId' not in proxy:
                     proxy['alterId'] = 0
+        # tun:
+        #   dns-hijack:
+        #   - 114.114.114.114
+        #   - 180.76.76.76
+        #   - 119.29.29.29
+        #   - 223.5.5.5
+        #   - 8.8.8.8
+        #    - 8.8.4.4
+        #   - 1.1.1.1
+        #   - 1.0.0.1 
+        # tun 下面 dns-hijack 节点中的配置项，如果没有端口要添加 :53
+        if 'tun' in data and 'dns-hijack' in data['tun']:
+            for i, dns in enumerate(data['tun']['dns-hijack']):
+                if ':' not in dns:
+                    data['tun']['dns-hijack'][i] = dns + ':53'
         
+        # 👇 关键：把局域网网段从 TUN 路由里排除    
+        if 'tun' in data:
+            data['tun']['route-exclude-address'] = [
+                "127.0.0.0/8",       # 本地回环（本机）
+                "192.168.0.0/16",    # 家用/办公最常见局域网
+                "10.0.0.0/8",        # 企业/容器常用
+                "172.16.0.0/12",     # 私有局域网段
+                "224.0.0.0/4",       # 多播地址
+                "255.255.255.255/32" # 广播地址
+            ]
+
         # 将rule-provider.yaml中的内容，添加到result的 rule-providers: 节点下，rule-providers 节点中原来的子节点要保留
         with open('rule-provider.yaml', 'r') as f:
             rule_providers = yaml.load(f)
@@ -717,6 +743,13 @@ def save_result(result, file_name_prefix=""):
         else:
             data['rule-providers'] = rule_providers
         
+        # 下面规则添加到rules开头确保局域网 IP 直连（不进代理）, 局域网 IP 全部直连
+        if 'rules' in data:
+            data['rules'].insert(0, 'IP-CIDR,127.0.0.0/8,DIRECT')
+            data['rules'].insert(1, 'IP-CIDR,192.168.0.0/16,DIRECT')
+            data['rules'].insert(2, 'IP-CIDR,10.0.0.0/8,DIRECT')
+            data['rules'].insert(3, 'IP-CIDR,172.16.0.0/12,DIRECT')
+
         # 将rules.yaml中的内容，添加到result的rules：节点下 要在GEOIP,CN,🎯 全球直连 之前，rules 节点中原来的子节点要保留
         with open('rules.yaml', 'r') as f:
             rules = yaml.load(f)
