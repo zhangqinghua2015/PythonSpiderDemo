@@ -4,8 +4,8 @@ name: v2rayse
 #   workflow_dispatch:
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2/1 * * *'
+  # schedule:
+  #   - cron: '0 2/1 * * *'
  
 jobs:
   v2rayse:
