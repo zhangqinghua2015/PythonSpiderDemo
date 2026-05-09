@@ -56,6 +56,7 @@ def get_latest_video_url(channel_url, cookies_file=None):
         'quiet': True,
         'extract_flat': True,
         'playlistend': 1,
+        'js_runtimes': {'node': {}},
     }
     # Log whether cookies were added
     cookies_added = _add_cookies(ydl_opts, cookies_file)
@@ -146,7 +147,7 @@ def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
         # All attempts failed
         print("All format attempts failed. Trying to extract info for debugging...")
         try:
-            with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': False}) as ydl_debug:
+            with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': False, 'js_runtimes': {'node': {}}}) as ydl_debug:
                 info = ydl_debug.extract_info(video_url, download=False)
                 formats = info.get('formats', [])
                 if formats:
