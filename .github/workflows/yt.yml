@@ -21,13 +21,13 @@ jobs:
             tesseract-ocr \
             tesseract-ocr-eng \
             tesseract-ocr-chi-sim \
-            python3-pip
+            python3-pip \
+            nodejs
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          # cache: 'pip'
 
       - name: Install Python dependencies
         run: |
