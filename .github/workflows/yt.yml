@@ -45,7 +45,7 @@ jobs:
       - name: Run password extraction
         id: extract
         run: |
-          python main.py > output.txt
+          python yt.py > output.txt
           # Parse the "password=..." line
           PASSWORD=$(grep -oP '^password=\K.*' output.txt)
           echo "password=$PASSWORD" >> $GITHUB_OUTPUT
