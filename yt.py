@@ -110,7 +110,7 @@ def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
         'no_warnings': False,
         'ignore_no_formats_error': True,
         'js_runtimes': {'node': {}},
-        'remote_components': 'ejs:github',
+        'remote_components': ['ejs:github'],
         'extractor_args': {
             'youtube': {
                 'player_client': ['android', 'web'],  # Try android first (less restricted)
