@@ -25,6 +25,8 @@ import requests
 # ----------------------------------------------------------------------
 # Configuration
 CHANNEL_URL = "https://www.youtube.com/@jcnode"
+COOKIES_FILE = "cookies.txt"   # must be present for YouTube to work in CI
+
 # Regex patterns for common password formats (4-8 alphanumeric, case-insensitive)
 PASSWORD_PATTERNS = [
     r'口令[：:]\s*([A-Za-z0-9]{4,8})',
@@ -37,7 +39,15 @@ PASSWORD_PATTERNS = [
 ]
 
 # ----------------------------------------------------------------------
-def get_latest_video_url(channel_url):
+def _add_cookies(ydl_opts, cookies_file):
+    """Add cookiefile to yt-dlp options if the file exists."""
+    if cookies_file and os.path.exists(cookies_file):
+        ydl_opts['cookiefile'] = cookies_file
+        return True
+    return False
+
+# ----------------------------------------------------------------------
+def get_latest_video_url(channel_url, cookies_file=None):
     """Fetch the newest video URL from a YouTube channel."""
     ydl_opts = {
         'quiet': True,
@@ -45,6 +55,7 @@ def get_latest_video_url(channel_url):
         'playlistend': 1,       # only first video
         'force_generic_extractor': False,
     }
+    _add_cookies(ydl_opts, cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(channel_url, download=False)
         if 'entries' in info and info['entries']:
@@ -65,9 +76,10 @@ def extract_from_text(text):
     return None
 
 
-def get_video_description(video_url):
+def get_video_description(video_url, cookies_file=None):
     """Return the description of the video."""
     ydl_opts = {'quiet': True, 'skip_download': True}
+    _add_cookies(ydl_opts, cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(video_url, download=False)
         return info.get('description', '')
@@ -83,8 +95,7 @@ def get_pinned_comment(video_url, cookies_file=None):
         'max_comments': 10,
         'extract_flat': False,
     }
-    if cookies_file and os.path.exists(cookies_file):
-        ydl_opts['cookiefile'] = cookies_file
+    _add_cookies(ydl_opts, cookies_file)
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
@@ -101,7 +112,7 @@ def get_pinned_comment(video_url, cookies_file=None):
     return None
 
 
-def ocr_password_from_video(video_url, temp_dir):
+def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
     """
     Download low-quality video, extract frames, run OCR.
     Returns first match found, or None.
@@ -113,6 +124,7 @@ def ocr_password_from_video(video_url, temp_dir):
         'outtmpl': str(video_path),
         'quiet': True,
     }
+    _add_cookies(ydl_opts, cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([video_url])
 
@@ -158,35 +170,38 @@ def ocr_password_from_video(video_url, temp_dir):
 
 
 def main():
-    cookies_file = "cookies.txt"   # expected to be present when secret provided
+    cookies_file = COOKIES_FILE
+
+    if not os.path.exists(cookies_file):
+        print("WARNING: cookies.txt not found. YouTube will likely block the request.")
+
     temp_dir = tempfile.mkdtemp()
     try:
         # Step 1: Get latest video URL
-        video_url, title = get_latest_video_url(CHANNEL_URL)
+        video_url, title = get_latest_video_url(CHANNEL_URL, cookies_file)
         if not video_url:
             print("ERROR: Could not extract video URL from channel")
             sys.exit(1)
         print(f"Latest video: {title} - {video_url}")
 
         # Step 2: Extract from description
-        desc = get_video_description(video_url)
+        desc = get_video_description(video_url, cookies_file)
         password = extract_from_text(desc)
         if password:
             print(f"password={password}")
             return
 
-        # Step 3: Extract from comments (if cookies available)
-        if os.path.exists(cookies_file):
-            comment_text = get_pinned_comment(video_url, cookies_file)
-            if comment_text:
-                password = extract_from_text(comment_text)
-                if password:
-                    print(f"password={password}")
-                    return
+        # Step 3: Extract from comments
+        comment_text = get_pinned_comment(video_url, cookies_file)
+        if comment_text:
+            password = extract_from_text(comment_text)
+            if password:
+                print(f"password={password}")
+                return
 
         # Step 4: OCR from video frames
         print("Attempting OCR on video frames...")
-        password = ocr_password_from_video(video_url, temp_dir)
+        password = ocr_password_from_video(video_url, temp_dir, cookies_file)
         if password:
             print(f"password={password}")
             return
