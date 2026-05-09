@@ -83,6 +83,7 @@ def get_video_description(video_url, cookies_file=None):
         'skip_download': True,
         'ignore_no_formats_error': True,
         'js_runtimes': {'node': {}},
+        'remote_components': 'ejs:github',
     }
     _add_cookies(ydl_opts, cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -101,6 +102,7 @@ def get_pinned_comment(video_url, cookies_file=None):
         'extract_flat': False,
         'ignore_no_formats_error': True,
         'js_runtimes': {'node': {}},
+        'remote_components': 'ejs:github',
     }
     _add_cookies(ydl_opts, cookies_file)
     try:
@@ -132,6 +134,7 @@ def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
         'quiet': True,
         'ignore_no_formats_error': True,
         'js_runtimes': {'node': {}},
+        'remote_components': 'ejs:github',
     }
     _add_cookies(ydl_opts, cookies_file)
     try:
@@ -198,19 +201,19 @@ def main():
         print(f"Latest video: {title} - {video_url}")
 
         # Step 2: Extract from description
-        # desc = get_video_description(video_url, cookies_file)
-        # password = extract_from_text(desc)
-        # if password:
-        #     print(f"password={password}")
-        #     return
+        desc = get_video_description(video_url, cookies_file)
+        password = extract_from_text(desc)
+        if password:
+            print(f"password={password}")
+            return
 
         # Step 3: Extract from comments
-        # comment_text = get_pinned_comment(video_url, cookies_file)
-        # if comment_text:
-        #     password = extract_from_text(comment_text)
-        #     if password:
-        #         print(f"password={password}")
-        #         return
+        comment_text = get_pinned_comment(video_url, cookies_file)
+        if comment_text:
+            password = extract_from_text(comment_text)
+            if password:
+                print(f"password={password}")
+                return
 
         # Step 4: OCR from video frames
         print("Attempting OCR on video frames...")
