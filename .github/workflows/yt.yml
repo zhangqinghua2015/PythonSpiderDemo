@@ -49,9 +49,9 @@ jobs:
         id: extract
         env:
           # Optional: limit OCR to a known time segment (e.g., "120-180" for 2:00-3:00)
-          PASSWORD_SEGMENT: ""
+          PASSWORD_SEGMENT: "70-120"
           # Optional: normalized ROI coordinate (x,y,w,h) e.g., "0.7,0.8,0.3,0.2"
-          OCR_REGION: ""
+          OCR_REGION: "1,0.5,1,1"
         run: |
           python yt.py > output.txt
           PASSWORD=$(grep -oP '^password=\K.*' output.txt)
