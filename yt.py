@@ -82,7 +82,7 @@ def get_video_description(video_url, cookies_file=None):
         'quiet': True,
         'skip_download': True,
         'ignore_no_formats_error': True,
-        'js_runtimes': {'node': None},
+        'js_runtimes': {'node': {}},
     }
     _add_cookies(ydl_opts, cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -100,7 +100,7 @@ def get_pinned_comment(video_url, cookies_file=None):
         'max_comments': 10,
         'extract_flat': False,
         'ignore_no_formats_error': True,
-        'js_runtimes': {'node': None},
+        'js_runtimes': {'node': {}},
     }
     _add_cookies(ydl_opts, cookies_file)
     try:
@@ -131,7 +131,7 @@ def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
         'outtmpl': str(video_path),
         'quiet': True,
         'ignore_no_formats_error': True,
-        'js_runtimes': {'node': None},
+        'js_runtimes': {'node': {}},
     }
     _add_cookies(ydl_opts, cookies_file)
     try:
