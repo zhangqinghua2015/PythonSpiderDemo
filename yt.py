@@ -198,19 +198,19 @@ def main():
         print(f"Latest video: {title} - {video_url}")
 
         # Step 2: Extract from description
-        desc = get_video_description(video_url, cookies_file)
-        password = extract_from_text(desc)
-        if password:
-            print(f"password={password}")
-            return
+        # desc = get_video_description(video_url, cookies_file)
+        # password = extract_from_text(desc)
+        # if password:
+        #     print(f"password={password}")
+        #     return
 
         # Step 3: Extract from comments
-        comment_text = get_pinned_comment(video_url, cookies_file)
-        if comment_text:
-            password = extract_from_text(comment_text)
-            if password:
-                print(f"password={password}")
-                return
+        # comment_text = get_pinned_comment(video_url, cookies_file)
+        # if comment_text:
+        #     password = extract_from_text(comment_text)
+        #     if password:
+        #         print(f"password={password}")
+        #         return
 
         # Step 4: OCR from video frames
         print("Attempting OCR on video frames...")
