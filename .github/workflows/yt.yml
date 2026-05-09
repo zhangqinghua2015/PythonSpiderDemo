@@ -38,7 +38,6 @@ jobs:
           pip install yt-dlp pytesseract Pillow requests
 
       - name: Restore cookies (optional)
-        # If you have a GitHub secret containing cookies.txt content
         env:
           COOKIES_SECRET: ${{ secrets.YT_COOKIES }}
         run: |
@@ -46,11 +45,15 @@ jobs:
             echo "$COOKIES_SECRET" > cookies.txt
           fi
 
-      - name: Run password extraction
+      - name: Run password extraction (hard‑subtitle OCR only)
         id: extract
+        env:
+          # Optional: limit OCR to a known time segment (e.g., "120-180" for 2:00-3:00)
+          PASSWORD_SEGMENT: ""
+          # Optional: normalized ROI coordinate (x,y,w,h) e.g., "0.7,0.8,0.3,0.2"
+          OCR_REGION: ""
         run: |
           python yt.py > output.txt
-          # Parse the "password=..." line
           PASSWORD=$(grep -oP '^password=\K.*' output.txt)
           echo "password=$PASSWORD" >> $GITHUB_OUTPUT
           echo "$PASSWORD" > extracted_password.txt
