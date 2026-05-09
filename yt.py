@@ -78,7 +78,12 @@ def extract_from_text(text):
 
 def get_video_description(video_url, cookies_file=None):
     """Return the description of the video."""
-    ydl_opts = {'quiet': True, 'skip_download': True}
+    ydl_opts = {
+        'quiet': True,
+        'skip_download': True,
+        'ignore_no_formats_error': True,
+        'js_runtimes': {'node': None},
+    }
     _add_cookies(ydl_opts, cookies_file)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(video_url, download=False)
@@ -94,6 +99,8 @@ def get_pinned_comment(video_url, cookies_file=None):
         'commentlimit': 10,
         'max_comments': 10,
         'extract_flat': False,
+        'ignore_no_formats_error': True,
+        'js_runtimes': {'node': None},
     }
     _add_cookies(ydl_opts, cookies_file)
     try:
@@ -123,10 +130,16 @@ def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
         'format': 'worst[ext=mp4]',
         'outtmpl': str(video_path),
         'quiet': True,
+        'ignore_no_formats_error': True,
+        'js_runtimes': {'node': None},
     }
     _add_cookies(ydl_opts, cookies_file)
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([video_url])
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+    except Exception as e:
+        print(f"Video download failed (n challenge likely unsolved): {e}")
+        return None
 
     if not video_path.exists():
         return None
