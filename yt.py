@@ -51,18 +51,39 @@ def _add_cookies(ydl_opts, cookies_file):
 
 def get_latest_video_url(channel_url, cookies_file=None):
     """Fetch the newest video URL from the channel."""
+    print(f"[DEBUG] Fetching latest video from: {channel_url}")
     ydl_opts = {
         'quiet': True,
         'extract_flat': True,
         'playlistend': 1,
     }
-    _add_cookies(ydl_opts, cookies_file)
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(channel_url, download=False)
-        if 'entries' in info and info['entries']:
-            first = info['entries'][0]
-            video_url = f"https://youtube.com/watch?v={first['id']}"
-            return video_url, first.get('title', '')
+    # Log whether cookies were added
+    cookies_added = _add_cookies(ydl_opts, cookies_file)
+    print(f"[DEBUG] Cookies file present? {cookies_added} (path: {cookies_file})")
+    print(f"[DEBUG] yt-dlp options: {ydl_opts}")
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(channel_url, download=False)
+            print(f"[DEBUG] extract_info returned keys: {list(info.keys())[:10] if info else 'None'}")
+            if 'entries' in info and info['entries']:
+                entries_count = len(info['entries'])
+                print(f"[DEBUG] Found {entries_count} entries in channel feed. First entry:")
+                first = info['entries'][0]
+                print(f"  - id: {first.get('id', 'N/A')}")
+                print(f"  - title: {first.get('title', 'N/A')[:100]}")
+                print(f"  - url: https://youtube.com/watch?v={first.get('id', '')}")
+                video_url = f"https://youtube.com/watch?v={first['id']}"
+                return video_url, first.get('title', '')
+            else:
+                print("[DEBUG] No 'entries' key or entries list is empty in info.")
+                if 'entries' in info:
+                    print("[DEBUG] 'entries' exists but is empty or None.")
+                else:
+                    print("[DEBUG] 'entries' not found in info. Info keys: " + ", ".join(info.keys()))
+    except Exception as e:
+        print(f"[ERROR] Exception in get_latest_video_url: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
     return None, None
 
 def extract_from_text(text):
@@ -77,28 +98,67 @@ def extract_from_text(text):
 
 def ocr_password_from_video(video_url, temp_dir, cookies_file=None):
     """
-    Download video (≤480p), extract frames (high density in the target segment),
-    run OCR (chi_sim+eng), and return the first password found.
+    Download video (any available format), extract frames, run OCR.
+    Implements multiple fallback strategies and detailed diagnostics.
     """
     video_path = Path(temp_dir) / "video.mp4"
 
-    # ---------- Download video in readable quality ----------
-    video_format = os.environ.get("FORCE_VIDEO_QUALITY", "worst[height<=480]")
-    ydl_opts = {
-        'format': video_format,
+    # Base options that apply to all attempts
+    base_opts = {
         'outtmpl': str(video_path),
-        'quiet': True,
+        'quiet': False,          # Log more details for debugging
+        'no_warnings': False,
         'ignore_no_formats_error': True,
         'js_runtimes': {'node': {}},
         'remote_components': 'ejs:github',
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],  # Try android first (less restricted)
+            }
+        }
     }
-    _add_cookies(ydl_opts, cookies_file)
+    _add_cookies(base_opts, cookies_file)
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    # List of format specifiers to try in order
+    format_attempts = [
+        "best[ext=mp4]",            # best MP4 (usually 720p+)
+        "worst[ext=mp4]",           # worst MP4 (lowest quality)
+        "best",                     # any format, best quality
+        "worst",                    # any format, worst quality
+        "bestaudio",                # fallback to audio only (if video fails)
+    ]
+
+    ydl = None
+    for fmt in format_attempts:
+        opts = base_opts.copy()
+        opts['format'] = fmt
+        try:
+            ydl = yt_dlp.YoutubeDL(opts)
+            print(f"Attempting download with format: {fmt}")
             ydl.download([video_url])
-    except Exception as e:
-        print(f"Video download failed: {e}")
+            if video_path.exists() and video_path.stat().st_size > 0:
+                print(f"Success with format: {fmt}")
+                break
+        except Exception as e:
+            print(f"Format {fmt} failed: {e}")
+            continue
+    else:
+        # All attempts failed
+        print("All format attempts failed. Trying to extract info for debugging...")
+        try:
+            with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': False}) as ydl_debug:
+                info = ydl_debug.extract_info(video_url, download=False)
+                formats = info.get('formats', [])
+                if formats:
+                    print(f"Available formats: {[f.get('format_note', f.get('format_id')) for f in formats]}")
+                else:
+                    print("No formats found in metadata.")
+        except Exception as e_debug:
+            print(f"Debug extraction also failed: {e_debug}")
+        return None
+
+    if not video_path.exists() or video_path.stat().st_size == 0:
+        print("Video file missing or empty after download attempts.")
         return None
 
     if not video_path.exists():
